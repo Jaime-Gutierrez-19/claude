@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PROMETEO — CubeSat Educativo</title>
+  <meta name="description" content="PROMETEO es un nanosatélite educativo diseñado para simular la misión HYDRO-ALERT Jalisco: monitoreo hidrometeorológico desde el espacio." />
+ 
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+ 
+  <style>
+    /* =============================================
+       RESET & ROOT VARIABLES
+    ============================================= */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+ 
+    :root {
+      --black:     #020408;
+      --deep:      #060c14;
+      --panel:     #0a1220;
+      --border:    rgba(255,255,255,0.08);
+      --white:     #f0f4ff;
+      --dim:       rgba(240,244,255,0.55);
+      --accent:    #00c8ff;
+      --accent2:   #0062ff;
+      --fire:      #ff6a1a;
+      --glow:      rgba(0,200,255,0.15);
+      --font-head: 'Bebas Neue', sans-serif;
+      --font-body: 'Outfit', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+ 
+    html { scroll-behavior: smooth; }
+ 
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-weight: 300;
+      line-height: 1.65;
+      overflow-x: hidden;
+    }
+ 
+    img { display: block; max-width: 100%; }
+ 
+    /* =============================================
+       SCROLLBAR
+    ============================================= */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+ 
+    /* =============================================
+       NAV
+    ============================================= */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem 4rem;
+      transition: background 0.4s, backdrop-filter 0.4s;
+    }
+ 
+    nav.scrolled {
+      background: rgba(2,4,8,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+ 
+    .nav-logo {
+      font-family: var(--font-head);
+      font-size: 1.6rem;
+      letter-spacing: 0.15em;
+      color: var(--white);
+      text-decoration: none;
+    }
+ 
+    .nav-logo span { color: var(--accent); }
+ 
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+ 
+    .nav-links a {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+ 
+    .nav-links a:hover { color: var(--accent); }
+ 
+    .nav-cta {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0.5rem 1.2rem;
+      text-decoration: none;
+      transition: background 0.25s, color 0.25s;
+    }
+ 
+    .nav-cta:hover {
+      background: var(--accent);
+      color: var(--black);
+    }
+ 
+    /* =============================================
+       HERO
+    ============================================= */
+    #hero {
+      position: relative;
+      height: 100vh;
+      min-height: 700px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+ 
+    /* Star field canvas */
+    #starfield {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+ 
+    /* Horizon glow */
+    .hero-glow {
+      position: absolute;
+      bottom: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 300px;
+      background: radial-gradient(ellipse at center, rgba(0,98,255,0.25) 0%, transparent 70%);
+      z-index: 1;
+      pointer-events: none;
+    }
+ 
+    /* Rotating ring graphic */
+    .hero-ring {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border: 1px solid rgba(0,200,255,0.08);
+      border-radius: 50%;
+      animation: spin 40s linear infinite;
+      z-index: 1;
+      pointer-events: none;
+    }
+ 
+    .hero-ring::before {
+      content: '';
+      position: absolute;
+      top: 20px; left: 20px; right: 20px; bottom: 20px;
+      border: 1px solid rgba(0,200,255,0.05);
+      border-radius: 50%;
+    }
+ 
+    @keyframes spin { to { transform: rotate(360deg); } }
+ 
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      padding: 0 2rem;
+    }
+ 
+    .hero-label {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.3s forwards;
+    }
+ 
+    .hero-title {
+      font-family: var(--font-head);
+      font-size: clamp(5rem, 14vw, 12rem);
+      line-height: 0.92;
+      letter-spacing: 0.04em;
+      color: var(--white);
+      opacity: 0;
+      animation: fadeUp 0.9s ease 0.5s forwards;
+    }
+ 
+    .hero-title span {
+      display: block;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+ 
+    .hero-sub {
+      font-size: 1.1rem;
+      font-weight: 300;
+      color: var(--dim);
+      margin-top: 1.8rem;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 0.8s forwards;
+    }
+ 
+    .hero-actions {
+      margin-top: 3rem;
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 1.1s forwards;
+    }
+ 
+    .btn-primary {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: var(--accent);
+      color: var(--black);
+      padding: 0.9rem 2.2rem;
+      text-decoration: none;
+      font-weight: 700;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+ 
+    .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+ 
+    .btn-ghost {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: 1px solid rgba(255,255,255,0.25);
+      color: var(--white);
+      padding: 0.9rem 2.2rem;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+ 
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+ 
+    /* Scroll indicator */
+    .hero-scroll {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 1.5s forwards;
+    }
+ 
+    .hero-scroll span {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+ 
+    .scroll-line {
+      width: 1px;
+      height: 50px;
+      background: linear-gradient(to bottom, var(--accent), transparent);
+      animation: scrollPulse 2s ease infinite;
+    }
+ 
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(1); }
+      50% { opacity: 1; transform: scaleY(1.1); }
+    }
+ 
+    /* =============================================
+       SECTION BASE STYLES
+    ============================================= */
+    section {
+      position: relative;
+      overflow: hidden;
+    }
+ 
+    .section-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 3rem;
+    }
+ 
+    .section-tag {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+ 
+    .section-tag::before {
+      content: '';
+      display: inline-block;
+      width: 24px;
+      height: 1px;
+      background: var(--accent);
+    }
+ 
+    .section-title {
+      font-family: var(--font-head);
+      font-size: clamp(2.8rem, 6vw, 5.5rem);
+      line-height: 1.0;
+      letter-spacing: 0.02em;
+      color: var(--white);
+    }
+ 
+    .section-title em {
+      font-style: normal;
+      color: var(--accent);
+    }
+ 
+    .section-body {
+      font-size: 1.05rem;
+      color: var(--dim);
+      max-width: 580px;
+      line-height: 1.8;
+    }
+ 
+    /* reveal on scroll */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+ 
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+ 
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.35s; }
+    .reveal-delay-4 { transition-delay: 0.5s; }
+ 
+    /* =============================================
+       DIVIDER LINE
+    ============================================= */
+    .h-line {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+    }
+ 
+    /* =============================================
+       PROBLEMA / OPORTUNIDAD
+    ============================================= */
+    #problema {
+      padding: 10rem 0 8rem;
+      background: var(--deep);
+    }
+ 
+    #problema .section-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6rem;
+      align-items: center;
+    }
+ 
+    .stat-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+ 
+    .stat-item {
+      border-left: 2px solid var(--accent);
+      padding-left: 1.5rem;
+    }
+ 
+    .stat-num {
+      font-family: var(--font-head);
+      font-size: 3.5rem;
+      line-height: 1;
+      color: var(--white);
+      letter-spacing: 0.03em;
+    }
+ 
+    .stat-num span { color: var(--accent); }
+ 
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--dim);
+      margin-top: 0.3rem;
+      letter-spacing: 0.02em;
+    }
+ 
+    /* =============================================
+       MISION / SOLUCION
+    ============================================= */
+    #mision {
+      padding: 10rem 0;
+      background: var(--black);
+    }
+ 
+    .mission-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: start;
+      margin-top: 5rem;
+    }
+ 
+    .mission-visual {
+      position: relative;
+    }
+ 
+    /* CSS CubeSat illustration */
+    .cubesat-wrapper {
+      perspective: 900px;
+      width: 280px;
+      height: 280px;
+      margin: 0 auto;
+    }
+ 
+    .cube {
+      width: 200px;
+      height: 200px;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(-20deg) rotateY(35deg);
+      animation: rotateCube 20s linear infinite;
+      margin: 40px auto;
+    }
+ 
+    @keyframes rotateCube {
+      0%   { transform: rotateX(-20deg) rotateY(35deg); }
+      100% { transform: rotateX(-20deg) rotateY(395deg); }
+    }
+ 
+    .face {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border: 1px solid rgba(0,200,255,0.4);
+      background: rgba(0,200,255,0.03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+ 
+    /* face circle cutout SVG-style with box-shadow glow */
+    .face::after {
+      content: '';
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,200,255,0.25);
+    }
+ 
+    .face-front  { transform: translateZ(100px); }
+    .face-back   { transform: rotateY(180deg) translateZ(100px); }
+    .face-left   { transform: rotateY(-90deg) translateZ(100px); }
+    .face-right  { transform: rotateY(90deg) translateZ(100px); }
+    .face-top    { transform: rotateX(90deg) translateZ(100px); }
+    .face-bottom { transform: rotateX(-90deg) translateZ(100px); }
+ 
+    .cube-glow {
+      position: absolute;
+      inset: -40px;
+      background: radial-gradient(ellipse at center, rgba(0,200,255,0.07) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
+ 
+    /* Corner pegs */
+    .peg {
+      position: absolute;
+      width: 12px;
+      height: 260px;
+      background: linear-gradient(to bottom, rgba(0,200,255,0.5), rgba(0,200,255,0.1));
+      border-radius: 2px;
+    }
+ 
+    .mission-points {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      padding-top: 1rem;
+    }
+ 
+    .mission-point {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1.2rem;
+      align-items: start;
+    }
+ 
+    .point-num {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      padding-top: 0.2rem;
+    }
+ 
+    .point-text h4 {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--white);
+      margin-bottom: 0.4rem;
+    }
+ 
+    .point-text p {
+      font-size: 0.9rem;
+      color: var(--dim);
+      line-height: 1.7;
+    }
+ 
+    /* =============================================
+       COMO FUNCIONA
+    ============================================= */
+    #funciona {
+      padding: 10rem 0;
+      background: var(--deep);
+    }
+ 
+    .steps-wrap {
+      margin-top: 5rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border: 1px solid var(--border);
+    }
+ 
+    .step {
+      padding: 2.5rem 2rem;
+      border-right: 1px solid var(--border);
+      position: relative;
+      transition: background 0.3s;
+    }
+ 
+    .step:last-child { border-right: none; }
+    .step:hover { background: rgba(0,200,255,0.03); }
+ 
+    .step-num {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+ 
+    .step-icon {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 1.2rem;
+      opacity: 0.8;
+    }
+ 
+    .step h3 {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--white);
+      margin-bottom: 0.75rem;
+    }
+ 
+    .step p {
+      font-size: 0.85rem;
+      color: var(--dim);
+      line-height: 1.7;
+    }
+ 
+    /* =============================================
+       ESPECIFICACIONES / BENEFICIOS
+    ============================================= */
+    #specs {
+      padding: 10rem 0;
+      background: var(--black);
+    }
+ 
+    .specs-grid {
+      margin-top: 5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+ 
+    .spec-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+ 
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+ 
+    .spec-row:first-child { border-top: 1px solid var(--border); }
+ 
+    .spec-key {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+ 
+    .spec-val {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--white);
+      font-weight: 700;
+    }
+ 
+    .benefits-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+    }
+ 
+    .benefit-card {
+      background: var(--deep);
+      padding: 2rem 1.8rem;
+      transition: background 0.3s;
+    }
+ 
+    .benefit-card:hover { background: var(--panel); }
+ 
+    .benefit-icon {
+      width: 28px;
+      height: 28px;
+      margin-bottom: 1rem;
+    }
+ 
+    .benefit-card h4 {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--white);
+      margin-bottom: 0.5rem;
+    }
+ 
+    .benefit-card p {
+      font-size: 0.82rem;
+      color: var(--dim);
+      line-height: 1.65;
+    }
+ 
+    /* =============================================
+       METRICAS
+    ============================================= */
+    #metricas {
+      padding: 10rem 0;
+      background: var(--deep);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+ 
+    .metrics-wrap {
+      margin-top: 5rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+ 
+    .metric {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-right: 1px solid var(--border);
+    }
+ 
+    .metric:last-child { border-right: none; }
+ 
+    .metric-num {
+      font-family: var(--font-head);
+      font-size: 4.5rem;
+      line-height: 1;
+      color: var(--white);
+      letter-spacing: 0.03em;
+    }
+ 
+    .metric-num span { color: var(--accent); }
+ 
+    .metric-label {
+      font-size: 0.85rem;
+      color: var(--dim);
+      margin-top: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+ 
+    .team-section {
+      margin-top: 6rem;
+    }
+ 
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1px;
+      background: var(--border);
+      margin-top: 3rem;
+    }
+ 
+    .team-card {
+      background: var(--black);
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+ 
+    .team-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      color: var(--black);
+      font-weight: 700;
+    }
+ 
+    .team-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--white);
+      line-height: 1.3;
+    }
+ 
+    .team-role {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+      text-transform: uppercase;
+      margin-top: 0.3rem;
+    }
+ 
+    /* =============================================
+       CTA FINAL
+    ============================================= */
+    #cta {
+      padding: 12rem 0;
+      background: var(--black);
+      text-align: center;
+      position: relative;
+    }
+ 
+    #cta::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 800px;
+      height: 600px;
+      background: radial-gradient(ellipse at center, rgba(0,98,255,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+ 
+    .cta-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+ 
+    .cta-title {
+      font-family: var(--font-head);
+      font-size: clamp(3rem, 7vw, 6rem);
+      line-height: 0.95;
+      letter-spacing: 0.03em;
+      color: var(--white);
+      margin-bottom: 2rem;
+    }
+ 
+    .cta-title em {
+      display: block;
+      font-style: normal;
+      color: var(--accent);
+    }
+ 
+    .cta-sub {
+      font-size: 1.05rem;
+      color: var(--dim);
+      max-width: 460px;
+      margin: 0 auto 3rem;
+      line-height: 1.75;
+    }
+ 
+    .cta-actions {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+ 
+    /* =============================================
+       FOOTER
+    ============================================= */
+    footer {
+      background: var(--deep);
+      border-top: 1px solid var(--border);
+      padding: 4rem 0 2.5rem;
+    }
+ 
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 3rem;
+    }
+ 
+    .footer-top {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 4rem;
+      margin-bottom: 4rem;
+    }
+ 
+    .footer-brand-name {
+      font-family: var(--font-head);
+      font-size: 2rem;
+      letter-spacing: 0.12em;
+      color: var(--white);
+      margin-bottom: 1rem;
+    }
+ 
+    .footer-brand-name span { color: var(--accent); }
+ 
+    .footer-desc {
+      font-size: 0.85rem;
+      color: var(--dim);
+      line-height: 1.75;
+      max-width: 300px;
+    }
+ 
+    .footer-col h5 {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+    }
+ 
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+ 
+    .footer-col a {
+      font-size: 0.85rem;
+      color: var(--dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+ 
+    .footer-col a:hover { color: var(--white); }
+ 
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      padding-top: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+ 
+    .footer-copy {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+    }
+ 
+    .footer-uni {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      color: var(--dim);
+      text-align: right;
+    }
+ 
+    /* =============================================
+       KEYFRAMES
+    ============================================= */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+ 
+    /* =============================================
+       RESPONSIVE
+    ============================================= */
+    @media (max-width: 960px) {
+      nav { padding: 1.2rem 2rem; }
+      .nav-links { display: none; }
+ 
+      .section-inner { padding: 0 2rem; }
+ 
+      #problema .section-inner,
+      .mission-grid,
+      .specs-grid { grid-template-columns: 1fr; gap: 3rem; }
+ 
+      .steps-wrap { grid-template-columns: 1fr 1fr; }
+ 
+      .metrics-wrap { grid-template-columns: 1fr; }
+      .metric { border-right: none; border-bottom: 1px solid var(--border); }
+      .metric:last-child { border-bottom: none; }
+ 
+      .team-grid { grid-template-columns: 1fr 1fr; }
+ 
+      .footer-top { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+ 
+    @media (max-width: 600px) {
+      .steps-wrap { grid-template-columns: 1fr; }
+      .benefits-cards { grid-template-columns: 1fr; }
+      .team-grid { grid-template-columns: 1fr 1fr; }
+    }
+ 
+    /* =============================================
+       NOISE TEXTURE OVERLAY
+    ============================================= */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.018;
+      pointer-events: none;
+      z-index: 9999;
+    }
+ 
+    /* SVG icons inline helper */
+    .icon-svg {
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+</head>
+ 
+<body>
+ 
+  <!-- =========================================
+       NAV
+  ========================================= -->
+  <nav id="navbar" aria-label="Navegación principal">
+    <a href="#hero" class="nav-logo">PRO<span>ME</span>TEO</a>
+    <ul class="nav-links">
+      <li><a href="#mision">Misión</a></li>
+      <li><a href="#funciona">Diseño</a></li>
+      <li><a href="#specs">Specs</a></li>
+      <li><a href="#metricas">Equipo</a></li>
+    </ul>
+    <a href="#cta" class="nav-cta">Conocer más</a>
+  </nav>
+ 
+  <!-- =========================================
+       HERO
+  ========================================= -->
+  <section id="hero" aria-label="Hero principal">
+    <canvas id="starfield" aria-hidden="true"></canvas>
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-ring" aria-hidden="true"></div>
+ 
+    <div class="hero-content">
+      <p class="hero-label">Universidad Marista de Guadalajara — 2026</p>
+      <h1 class="hero-title">
+        PRO<span>METEO</span>
+      </h1>
+      <p class="hero-sub">
+        Un nanosatélite diseñado desde Jalisco para monitorear lo que más importa:
+        el agua, el clima y el futuro de nuestra región.
+      </p>
+      <div class="hero-actions">
+        <a href="#mision" class="btn-primary">Ver la misión</a>
+        <a href="#funciona" class="btn-ghost">Explorar diseño</a>
+      </div>
+    </div>
+ 
+    <div class="hero-scroll" aria-hidden="true">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+ 
+  <!-- =========================================
+       PROBLEMA / OPORTUNIDAD
+  ========================================= -->
+  <section id="problema" aria-labelledby="problema-title">
+    <div class="section-inner">
+ 
+      <div>
+        <p class="section-tag reveal">El problema</p>
+        <h2 class="section-title reveal reveal-delay-1" id="problema-title">
+          Jalisco necesita<br><em>ojos en el cielo.</em>
+        </h2>
+        <p class="section-body reveal reveal-delay-2" style="margin-top:1.5rem;">
+          La cuenca Lerma-Chapala y la Zona Metropolitana de Guadalajara enfrentan
+          inundaciones recurrentes, variaciones críticas en niveles de agua y una
+          creciente presión sobre los recursos hídricos. Los datos llegan tarde.
+          Las alertas llegan aún más tarde.
+        </p>
+        <p class="section-body reveal reveal-delay-3" style="margin-top:1rem;">
+          PROMETEO es la respuesta: una plataforma educativa que sienta las bases
+          tecnológicas para monitoreo satelital de bajo costo, accesible y replicable.
+        </p>
+      </div>
+ 
+      <div class="stat-stack">
+        <div class="stat-item reveal reveal-delay-1">
+          <div class="stat-num">600<span>km</span></div>
+          <div class="stat-label">Altitud objetivo de la misión HYDRO-ALERT Jalisco</div>
+        </div>
+        <div class="stat-item reveal reveal-delay-2">
+          <div class="stat-num">2–3<span>días</span></div>
+          <div class="stat-label">Frecuencia de revisita para monitoreo hídrico continuo</div>
+        </div>
+        <div class="stat-item reveal reveal-delay-3">
+          <div class="stat-num">&lt;4<span>hrs</span></div>
+          <div class="stat-label">Latencia de datos para activar alertas tempranas</div>
+        </div>
+      </div>
+ 
+    </div>
+  </section>
+ 
+  <!-- =========================================
+       MISIÓN / SOLUCIÓN
+  ========================================= -->
+  <section id="mision" aria-labelledby="mision-title">
+    <div class="section-inner">
+ 
+      <p class="section-tag reveal">Nuestra solución</p>
+      <h2 class="section-title reveal reveal-delay-1" id="mision-title">
+        Diseñado para<br><em>volar diferente.</em>
+      </h2>
+ 
+      <div class="mission-grid">
+ 
+        <!-- CSS 3D CubeSat -->
+        <div class="mission-visual reveal reveal-delay-2" aria-label="Modelo 3D del CubeSat PROMETEO">
+          <div class="cubesat-wrapper">
+            <div class="cube">
+              <div class="cube-glow"></div>
+              <div class="face face-front"></div>
+              <div class="face face-back"></div>
+              <div class="face face-left"></div>
+              <div class="face face-right"></div>
+              <div class="face face-top"></div>
+              <div class="face face-bottom"></div>
+            </div>
+          </div>
+          <p style="text-align:center; font-family:var(--font-mono); font-size:0.62rem; letter-spacing:0.15em; color:var(--dim); margin-top:1rem; text-transform:uppercase;">
+            Estructura 1U — Aluminio 6061-T6
+          </p>
+        </div>
+ 
+        <!-- Mission points -->
+        <div class="mission-points">
+          <div class="mission-point reveal reveal-delay-1">
+            <div class="point-num">01</div>
+            <div class="point-text">
+              <h4>Monitoreo hidrometeorológico</h4>
+              <p>Adquisición de temperatura, presión atmosférica, humedad y altitud en tiempo real durante perfiles de vuelo de baja altura.</p>
+            </div>
+          </div>
+          <div class="mission-point reveal reveal-delay-2">
+            <div class="point-num">02</div>
+            <div class="point-text">
+              <h4>Estructura estándar CubeSat 1U</h4>
+              <p>Compatible con dispensadores P-POD. Dimensiones 10 × 10 × 10 cm con rieles de guía y cara desmontable para acceso a subsistemas.</p>
+            </div>
+          </div>
+          <div class="mission-point reveal reveal-delay-3">
+            <div class="point-num">03</div>
+            <div class="point-text">
+              <h4>Panel solar orientable</h4>
+              <p>Subsistema de seguimiento solar activo mediante sensores LDR y actuador servo, maximizando la captación de energía en cualquier orientación.</p>
+            </div>
+          </div>
+          <div class="mission-point reveal reveal-delay-4">
+            <div class="point-num">04</div>
+            <div class="point-text">
+              <h4>Simulación de misión real</h4>
+              <p>PROMETEO replica los principios de HYDRO-ALERT Jalisco: desde la arquitectura de subsistemas hasta la transmisión y almacenamiento de datos.</p>
+            </div>
+          </div>
+        </div>
+ 
+      </div>
+    </div>
+  </section>
+ 
+  <!-- =========================================
+       CÓMO FUNCIONA
+  ========================================= -->
+  <section id="funciona" aria-labelledby="funciona-title">
+    <div class="section-inner">
+ 
+      <p class="section-tag reveal">Proceso de diseño</p>
+      <h2 class="section-title reveal reveal-delay-1" id="funciona-title">
+        Ingeniería desde<br><em>cero.</em>
+      </h2>
+ 
+      <div class="steps-wrap reveal reveal-delay-2">
+ 
+        <div class="step">
+          <div class="step-num">FASE 01</div>
+          <svg class="step-icon icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+          <h3>Modelado CAD</h3>
+          <p>Diseño completo en SolidWorks con planos de fabricación en formato A3, vistas explosionadas y lista de materiales conforme a normativa FAA-H-8083-30B.</p>
+        </div>
+ 
+        <div class="step">
+          <div class="step-num">FASE 02</div>
+          <svg class="step-icon icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+          </svg>
+          <h3>Simulación FEM</h3>
+          <p>Análisis de respuesta armónica y estructural en ANSYS con aluminio 6061-T6. Sin frecuencias críticas en rango operativo. Esfuerzos distribuidos uniformemente.</p>
+        </div>
+ 
+        <div class="step">
+          <div class="step-num">FASE 03</div>
+          <svg class="step-icon icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+          </svg>
+          <h3>Fabricación</h3>
+          <p>Corte láser de lámina Al-6061-T6, doblado de pestañas a 90°, perforado y ensamble con remaches POP de 4 mm. Peso estructural: 119 g en vacío.</p>
+        </div>
+ 
+        <div class="step">
+          <div class="step-num">FASE 04</div>
+          <svg class="step-icon icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          <h3>Integración & Vuelo</h3>
+          <p>Instalación de subsistemas EPS, CDHS y carga útil de sensores. Pruebas en vuelos de baja altitud (+50 m) con telemetría en tiempo real.</p>
+        </div>
+ 
+      </div>
+    </div>
+  </section>
+ 
+  <!-- =========================================
+       ESPECIFICACIONES / BENEFICIOS
+  ========================================= -->
+  <section id="specs" aria-labelledby="specs-title">
+    <div class="section-inner">
+ 
+      <p class="section-tag reveal">Especificaciones técnicas</p>
+      <h2 class="section-title reveal reveal-delay-1" id="specs-title">
+        Construido con<br><em>precisión.</em>
+      </h2>
+ 
+      <div class="specs-grid">
+ 
+        <!-- Spec table -->
+        <div class="spec-list reveal reveal-delay-2">
+          <div class="spec-row">
+            <span class="spec-key">Estándar</span>
+            <span class="spec-val">CubeSat 1U</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">Dimensiones</span>
+            <span class="spec-val">100 × 100 × 100 mm</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">Material</span>
+            <span class="spec-val">Aluminio 6061-T6</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">Masa estructural</span>
+            <span class="spec-val">119 g (vacío)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">Masa máx. (1U)</span>
+            <span class="spec-val">1.33 kg</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">Unión</span>
+            <span class="spec-val">Remaches POP Ø 4 mm</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">Frec. armónica</span>
+            <span class="spec-val">1156 – 1454 Hz (sin resonancia)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">Compatibilidad</span>
+            <span class="spec-val">Dispensador P-POD</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">Potencia</span>
+            <span class="spec-val">Panel solar orientable + EPS</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-key">Sensores</span>
+            <span class="spec-val">Temp / Presión / Humedad / Alt</span>
+          </div>
+        </div>
+ 
+        <!-- Benefits cards -->
+        <div class="benefits-cards reveal reveal-delay-3">
+          <div class="benefit-card">
+            <svg class="benefit-icon icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <h4>Alta resistencia, bajo peso</h4>
+            <p>El Al-6061-T6 ofrece una relación resistencia-peso ideal para aplicaciones aeroespaciales de bajo costo.</p>
+          </div>
+          <div class="benefit-card">
+            <svg class="benefit-icon icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            <h4>Misión real, escala educativa</h4>
+            <p>Simula la arquitectura de HYDRO-ALERT usando sensores comerciales y metodología universitaria probada.</p>
+          </div>
+          <div class="benefit-card">
+            <svg class="benefit-icon icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <h4>Panel de energía autónomo</h4>
+            <p>Sistema de seguimiento solar activo con control PWM que optimiza la captación en cualquier orientación de vuelo.</p>
+          </div>
+          <div class="benefit-card">
+            <svg class="benefit-icon icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            <h4>Validado en ANSYS</h4>
+            <p>Análisis FEM confirma integridad estructural sin frecuencias críticas en el rango operativo esperado.</p>
+          </div>
+        </div>
+ 
+      </div>
+    </div>
+  </section>
+ 
+  <!-- =========================================
+       MÉTRICAS Y EQUIPO
+  ========================================= -->
+  <section id="metricas" aria-labelledby="metricas-title">
+    <div class="section-inner">
+ 
+      <p class="section-tag reveal">Logros del proyecto</p>
+      <h2 class="section-title reveal reveal-delay-1" id="metricas-title">
+        Números que<br><em>importan.</em>
+      </h2>
+ 
+      <div class="metrics-wrap reveal reveal-delay-2">
+        <div class="metric">
+          <div class="metric-num">119<span>g</span></div>
+          <div class="metric-label">Masa estructural en vacío</div>
+        </div>
+        <div class="metric">
+          <div class="metric-num">4<span>+</span></div>
+          <div class="metric-label">Subsistemas integrados</div>
+        </div>
+        <div class="metric">
+          <div class="metric-num">1U</div>
+          <div class="metric-label">Estándar CubeSat certificado</div>
+        </div>
+      </div>
+ 
+      <!-- Equipo -->
+      <div class="team-section">
+        <p class="section-tag reveal">El equipo</p>
+        <div class="team-grid reveal reveal-delay-1">
+ 
+          <div class="team-card">
+            <div class="team-avatar">PA</div>
+            <div class="team-name">Paulina Aguayo Camacho</div>
+            <div class="team-role">Simulaciones FEM </div>
+          </div>
+ 
+          <div class="team-card">
+            <div class="team-avatar">SM</div>
+            <div class="team-name">Samuel A. Montes Saldate</div>
+            <div class="team-role">Estructuras </div>
+          </div>
+ 
+          <div class="team-card">
+            <div class="team-avatar">AG</div>
+            <div class="team-name">Amanda C. Guzmán Arias</div>
+            <div class="team-role">Integración de sistemas</div>
+          </div>
+ 
+          <div class="team-card">
+            <div class="team-avatar">JG</div>
+            <div class="team-name">Jaime E. Gutiérrez Ávila</div>
+            <div class="team-role">Diseño CAD</div>
+          </div>
+  <div class="team-card">
+            <div class="team-avatar">GN</div>
+            <div class="team-name">Gilberto Nuñez</div>
+            <div class="team-role">Integración de sistemas</div>
+          </div>
+        </div>
+        <p style="text-align:center; font-family:var(--font-mono); font-size:0.65rem; letter-spacing:0.15em; color:var(--dim); margin-top:1.5rem; text-transform:uppercase;">
+          Asesor: M. Ciro Zárate Tomás — Estructuras Espaciales
+        </p>
+      </div>
+ 
+    </div>
+  </section>
+ 
+  <!-- =========================================
+       CTA FINAL
+  ========================================= -->
+  <section id="cta" aria-labelledby="cta-title">
+    <div class="cta-inner">
+      <h2 class="cta-title reveal" id="cta-title">
+        El futuro<br>
+        <em>comienza aquí.</em>
+      </h2>
+      <p class="cta-sub reveal reveal-delay-1">
+        PROMETEO demuestra que la ingeniería espacial no es solo patrimonio de las agencias globales.
+        Nace en Guadalajara. Vuela desde Jalisco. Inspira a México.
+      </p>
+      <div class="cta-actions reveal reveal-delay-2">
+        <a href="#funciona" class="btn-primary">Ver el diseño completo</a>
+        <a href="#problema" class="btn-ghost">Conocer la misión</a>
+      </div>
+    </div>
+  </section>
+ 
+  <!-- =========================================
+       FOOTER
+  ========================================= -->
+  <footer aria-label="Pie de página">
+    <div class="footer-inner">
+ 
+      <div class="footer-top">
+        <div>
+          <div class="footer-brand-name">PRO<span>ME</span>TEO</div>
+          <p class="footer-desc">
+            Nanosatélite educativo tipo CubeSat 1U desarrollado para simular la misión
+            HYDRO-ALERT Jalisco, monitoreo hidrometeorológico de la cuenca Lerma-Chapala
+            y la Zona Metropolitana de Guadalajara.
+          </p>
+        </div>
+ 
+        <div class="footer-col">
+          <h5>Proyecto</h5>
+          <ul>
+            <li><a href="#mision">Misión</a></li>
+            <li><a href="#funciona">Diseño estructural</a></li>
+            <li><a href="#specs">Especificaciones</a></li>
+            <li><a href="#metricas">Equipo</a></li>
+          </ul>
+        </div>
+ 
+        <div class="footer-col">
+          <h5>Institución</h5>
+          <ul>
+            <li><a href="#" aria-label="Universidad Marista de Guadalajara">Ing. Aeroespacial</a></li>
+            <li><a href="#" aria-label="Materia de Estructuras Espaciales">Estructuras Espaciales</a></li>
+            <li><a href="#" aria-label="Zapopan, Jalisco">Zapopan, Jalisco</a></li>
+            <li><a href="#" aria-label="Año 2026">2026</a></li>
+          </ul>
+        </div>
+      </div>
+ 
+      <div class="footer-bottom">
+        <span class="footer-copy">© 2026 PROMETEO — Todos los derechos reservados</span>
+        <span class="footer-uni">Universidad Marista de Guadalajara<br>Ingeniería Aeroespacial</span>
+      </div>
+ 
+    </div>
+  </footer>
+ 
+  <!-- =========================================
+       JAVASCRIPT
+  ========================================= -->
+  <script>
+    /* ------------------------------------------
+       STARFIELD CANVAS
+    ------------------------------------------ */
+    (function () {
+      const canvas = document.getElementById('starfield');
+      const ctx = canvas.getContext('2d');
+      let stars = [];
+      const NUM_STARS = 200;
+ 
+      function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+ 
+      function initStars() {
+        stars = [];
+        for (let i = 0; i < NUM_STARS; i++) {
+          stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            r: Math.random() * 1.2 + 0.2,
+            alpha: Math.random() * 0.7 + 0.15,
+            speed: Math.random() * 0.3 + 0.05,
+            drift: (Math.random() - 0.5) * 0.15
+          });
+        }
+      }
+ 
+      function drawStars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        stars.forEach(s => {
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(200, 220, 255, ${s.alpha})`;
+          ctx.fill();
+          // very slow drift
+          s.y += s.speed * 0.2;
+          s.x += s.drift * 0.1;
+          // wrap
+          if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
+          if (s.x < 0) s.x = canvas.width;
+          if (s.x > canvas.width) s.x = 0;
+        });
+        requestAnimationFrame(drawStars);
+      }
+ 
+      window.addEventListener('resize', () => { resize(); initStars(); });
+      resize();
+      initStars();
+      drawStars();
+    })();
+ 
+    /* ------------------------------------------
+       NAV SCROLL STATE
+    ------------------------------------------ */
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 60);
+    }, { passive: true });
+ 
+    /* ------------------------------------------
+       SCROLL REVEAL
+    ------------------------------------------ */
+    const revealEls = document.querySelectorAll('.reveal');
+ 
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+ 
+    revealEls.forEach(el => observer.observe(el));
+ 
+    /* ------------------------------------------
+       PARALLAX HERO CONTENT (subtle)
+    ------------------------------------------ */
+    const heroContent = document.querySelector('.hero-content');
+    const heroRing = document.querySelector('.hero-ring');
+ 
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      if (heroContent) heroContent.style.transform = `translateY(${y * 0.25}px)`;
+      if (heroRing)    heroRing.style.transform    = `translateY(${y * 0.12}px) rotate(${y * 0.03}deg)`;
+    }, { passive: true });
+ 
+    /* ------------------------------------------
+       ANIMATED COUNTER (metrics section)
+    ------------------------------------------ */
+    function animateCount(el, target, suffix, duration) {
+      let start = 0;
+      const step = target / (duration / 16);
+      const isDecimal = target % 1 !== 0;
+ 
+      function tick() {
+        start = Math.min(start + step, target);
+        el.querySelector('.count-val').textContent =
+          isDecimal ? start.toFixed(1) + suffix : Math.floor(start) + suffix;
+        if (start < target) requestAnimationFrame(tick);
+      }
+      tick();
+    }
+ 
+    // Observe metrics section to trigger counters
+    const metricsSection = document.getElementById('metricas');
+    let countersTriggered = false;
+ 
+    const metricsObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !countersTriggered) {
+        countersTriggered = true;
+        // metrics are static text for now — add data- attrs to animate if desired
+      }
+    }, { threshold: 0.3 });
+ 
+    if (metricsSection) metricsObserver.observe(metricsSection);
+ 
+    /* ------------------------------------------
+       SMOOTH ANCHOR SCROLL (offset for fixed nav)
+    ------------------------------------------ */
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', e => {
+        const target = document.querySelector(link.getAttribute('href'));
+        if (!target) return;
+        e.preventDefault();
+        const offset = 80;
+        window.scrollTo({
+          top: target.offsetTop - offset,
+          behavior: 'smooth'
+        });
+      });
+    });
+  </script>
+ 
+</body>
+</html>
+ 
